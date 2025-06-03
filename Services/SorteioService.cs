@@ -10,28 +10,33 @@ namespace VoleiApp.Services
     public class SorteioService
     {
         readonly Random _random = new();
-        public List<Time> SortearTimes(List<Atleta> atletas, SorteioConfig config, out Queue<Atleta> reservas)
+        public SorteioResultDTO SortearTimes(SorteioConfigDTO config)
         {
-            var embaralhado = atletas.OrderBy(a => _random.Next()).ToList();
+            var embaralhados = config.Atletas.OrderBy(_ => Guid.NewGuid()).ToList();
             var times = new List<Time>();
+            var reservas = new List<Atleta>();
 
-            for (var i = 0; i < embaralhado.Count; i++)
-                times.Add(new Time { 
-                                ID = i + 1, 
-                                Nome = $"Time A" 
-                });
+            int qtdPorTime = config.TamanhoDoTime;
+            int totalTimes = embaralhados.Count / qtdPorTime;
 
-            int t = 0;
-            int totalJogadores = config.NumeroDeTimes * config.JogadorPorTimes;
-            for (var i = 0; i < totalJogadores && i < embaralhado.Count; i++)
+            for (int i = 0; i < totalTimes; i++)
             {
-                times[t].Atletas.Add(embaralhado[i]); //adiciona o jogador no time
-                t = (t + 1) % config.NumeroDeTimes;
+                var atletasDoTime = embaralhados.Skip(i * qtdPorTime).Take(qtdPorTime).ToList();
+                times.Add(new Time
+                {
+                    Nome = $"Time {i + 1}",
+                    Atletas = atletasDoTime
+                });
             }
 
-            reservas = new Queue<Atleta>(embaralhado.Skip(totalJogadores));
-            
-            return times;
+            // Reservas: o que sobrou depois de formar os times
+            reservas = embaralhados.Skip(totalTimes * qtdPorTime).ToList();
+
+            return new SorteioResultDTO
+            {
+                Times = times,
+                Reservas = reservas
+            };
         }
 
         public Substituicao SubstituirJogadores(Time timePerdedor, Queue<Atleta> reservas, int qtdSubstituicoes = 1)
