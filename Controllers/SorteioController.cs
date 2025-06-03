@@ -72,7 +72,7 @@ namespace VoleiApp.Controllers
             _context.Partidas.Add(partida);
             await _context.SaveChangesAsync();
 
-            return CreatedAtAction(nameof(SalvarPartida), new { id = partida.Id }, partida);
+            return CreatedAtAction(nameof(SalvarPartida), new { id = partida.ID }, partida);
         }
     }
 }

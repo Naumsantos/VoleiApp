@@ -40,7 +40,7 @@ namespace VoleiApp.Controllers
             return _context.Partidas
                 .Include(p => p.TimeA.Atletas)
                 .Include(p => p.TimeB.Atletas)
-                .Include(p => p.Substuicoes)
+                .Include(p => p.Substituicoes)
                 .ToList();
         }
 
@@ -55,7 +55,7 @@ namespace VoleiApp.Controllers
             var partida = _context.Partidas
                 .Include(p => p.TimeA.Atletas)
                 .Include(p => p.TimeB.Atletas)
-                .Include(p => p.Substuicoes)
+                .Include(p => p.Substituicoes)
                 .FirstOrDefault(p => p.ID == id);
 
             return partida == null ? NotFound() : Ok(partida);
