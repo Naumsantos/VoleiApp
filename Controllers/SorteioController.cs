@@ -21,19 +21,20 @@ namespace VoleiApp.Controllers
         }
 
         /// <summary>
-        /// Realiza o sorteio dos times com base na configuração.
+        /// Realiza o sorteio automático de times a partir da lista de atletas.
         /// </summary>
+        /// <param name="config">Configuração do sorteio (atletas + tamanho do time)</param>
         [HttpPost("sortear")]
-        public IActionResult Sortear([FromBody] SorteioConfig config)
+        public ActionResult<SorteioResultDTO> Sortear(SorteioConfigDTO config)
         {
-            var atletas = _context.Atletas.ToList();
-            var totalNecessario = config.NumeroDeTimes * config.JogadorPorTimes;
+            if (config.TamanhoDoTime != 2 && config.TamanhoDoTime != 4 && config.TamanhoDoTime != 6)
+                return BadRequest("Tamanho do time deve ser 2, 4 ou 6.");
 
-            if(atletas.Count < totalNecessario) 
-                return BadRequest($"É necessário pelo menos {totalNecessario} atletas cadastrados.");
+            if (config.Atletas == null || !config.Atletas.Any())
+                return BadRequest("Lista de atletas não pode estar vazia.");
 
-            _times = _sorteioService.SortearTimes(atletas, config, out _reservas);
-            return Ok( _times );
+            var resultado = _sorteioService.SortearTimes(config);
+            return Ok(resultado);
         }
 
         /// <summary>
@@ -50,6 +51,28 @@ namespace VoleiApp.Controllers
 
             var substituicao = _sorteioService.SubstituirJogadores(time, _reservas);
             return Ok( substituicao );
+        }
+
+        /// <summary>
+        /// Salva uma nova partida a partir do resultado do sorteio.
+        /// </summary>
+        [HttpPost("salvar")]
+        public async Task<ActionResult<Partida>> SalvarPartida(SalvarPartidaDTO dto)
+        {
+            if (dto.TimeA == null || dto.TimeB == null)
+                return BadRequest("Time A e Time B são obrigatórios.");
+
+            var partida = new Partida
+            {
+                TimeA = dto.TimeA,
+                TimeB = dto.TimeB,
+                Substituicoes = new List<Substituicao>()
+            };
+
+            _context.Partidas.Add(partida);
+            await _context.SaveChangesAsync();
+
+            return CreatedAtAction(nameof(SalvarPartida), new { id = partida.Id }, partida);
         }
     }
 }
