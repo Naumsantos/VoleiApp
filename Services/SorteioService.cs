@@ -56,7 +56,7 @@ namespace VoleiApp.Services
 
             return new Substituicao
             {
-                TimeID = timePerdedor.ID,
+                Id = timePerdedor.ID,
                 Entraram = entraram,
                 Sairam = sairam
             };

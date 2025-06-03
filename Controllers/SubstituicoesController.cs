@@ -42,7 +42,7 @@ namespace VoleiApp.Controllers
             var substituicao = await _context.Substituicoes
                 .Include(s => s.Entraram)
                 .Include(s => s.Sairam)
-                .FirstOrDefaultAsync(s => s.TimeID == id);
+                .FirstOrDefaultAsync(s => s.Id == id);
 
             if (substituicao == null) return NotFound();
 
@@ -60,7 +60,7 @@ namespace VoleiApp.Controllers
             _context.Substituicoes.Add(substituicao);
             await _context.SaveChangesAsync();
 
-            return CreatedAtAction(nameof(GetById), new { id = substituicao.TimeID }, substituicao);
+            return CreatedAtAction(nameof(GetById), new { id = substituicao.Id }, substituicao);
         }
     }
 }
