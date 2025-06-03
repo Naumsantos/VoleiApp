@@ -7,6 +7,6 @@
         public Time TimeB { get; set; }
         public int TimeVencedorID {  get; set; }
         public DateTime Data {  get; set; } = DateTime.Now;
-        public List<Substituicao> Substuicoes { get; set; }
+        public List<Substituicao> Substituicoes { get; set; }
     }
 }
