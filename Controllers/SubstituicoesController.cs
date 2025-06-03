@@ -36,6 +36,7 @@ namespace VoleiApp.Controllers
         /// </summary>
         /// <param name="id"></param>
         /// <returns></returns>
+        [HttpGet("{id}")]
         public async Task<ActionResult<Substituicao>> GetById(int id)
         {
             var substituicao = await _context.Substituicoes
