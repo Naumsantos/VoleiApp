@@ -1,0 +1,6 @@
+@VoleiApp.API_HostAddress = http://localhost:5252
+
+GET {{VoleiApp.API_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
