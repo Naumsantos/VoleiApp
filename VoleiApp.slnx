@@ -1,0 +1,12 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/VoleiApp.API/VoleiApp.API.csproj" />
+    <Project Path="src/VoleiApp.Application/VoleiApp.Application.csproj" />
+    <Project Path="src/VoleiApp.Domain/VoleiApp.Domain.csproj" />
+    <Project Path="src/VoleiApp.Infrastructure/VoleiApp.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/VoleiApp.IntegrationTests/VoleiApp.IntegrationTests.csproj" />
+    <Project Path="tests/VoleiApp.UnitTests/VoleiApp.UnitTests.csproj" />
+  </Folder>
+</Solution>
