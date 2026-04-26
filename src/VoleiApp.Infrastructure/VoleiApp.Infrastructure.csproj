@@ -1,6 +1,10 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="10.0.7" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\VoleiApp.Domain\VoleiApp.Domain.csproj" />
     <ProjectReference Include="..\VoleiApp.Application\VoleiApp.Application.csproj" />
   </ItemGroup>

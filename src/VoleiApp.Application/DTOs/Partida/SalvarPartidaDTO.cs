@@ -1,4 +1,6 @@
-﻿namespace VoleiApp.Models
+﻿using VoleiApp.Domain.Entities;
+
+namespace VoleiApp.Application.DTOs.Partida
 {
     /// <summary>
     /// Representa uma requisição para salvar uma partida gerada pelo sorteio.

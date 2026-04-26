@@ -1,7 +1,7 @@
 ﻿
-namespace VoleiApp.Models
+namespace VoleiApp.Domain.Entities
 {
-    public enum Posicao
+    public enum EPosicao
     {
         Levantador,
         Libero,

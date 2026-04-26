@@ -1,9 +1,9 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using VoleiApp.Data;
-using VoleiApp.Models;
+using VoleiApp.Domain.Entities;
+using VoleiApp.Infrastructure.Persistence;
 
-namespace VoleiApp.Controllers
+namespace VoleiApp.API.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]

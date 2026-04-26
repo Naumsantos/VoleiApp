@@ -1,4 +1,4 @@
-﻿using VoleiApp.Models;
+﻿using VoleiApp.Domain.Entities;
 
 /// <summary>
 /// Resultado do sorteio com os times e reservas.

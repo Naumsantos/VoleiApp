@@ -1,8 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using VoleiApp.Models;
+using VoleiApp.Domain.Entities;
 
-
-namespace VoleiApp.Data
+namespace VoleiApp.Infrastructure.Persistence
 {
     public class VoleiContext : DbContext
     {

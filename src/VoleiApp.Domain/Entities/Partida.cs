@@ -1,4 +1,4 @@
-﻿namespace VoleiApp.Models
+﻿namespace VoleiApp.Domain.Entities
 {
     public class Partida
     {

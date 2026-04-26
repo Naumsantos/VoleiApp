@@ -1,11 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using VoleiApp.Models;
+﻿using VoleiApp.Domain.Entities;
 
-namespace VoleiApp.Services
+namespace VoleiApp.Application.UseCases
 {
     public class SorteioService
     {

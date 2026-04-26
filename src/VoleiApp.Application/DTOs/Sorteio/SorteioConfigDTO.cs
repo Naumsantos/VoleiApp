@@ -1,4 +1,4 @@
-﻿using VoleiApp.Models;
+﻿using VoleiApp.Domain.Entities;
 
 /// <summary>
 /// Representa as configurações para sorteio de times.
