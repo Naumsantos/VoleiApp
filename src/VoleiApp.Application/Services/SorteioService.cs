@@ -1,6 +1,6 @@
 ﻿using VoleiApp.Domain.Entities;
 
-namespace VoleiApp.Application.UseCases
+namespace VoleiApp.Application.Services
 {
     public class SorteioService
     {
