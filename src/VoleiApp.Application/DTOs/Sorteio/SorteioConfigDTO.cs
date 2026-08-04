@@ -1,5 +1,7 @@
 ﻿using VoleiApp.Domain.Entities;
 
+namespace VoleiApp.Application.DTOs.Sorteio;
+
 /// <summary>
 /// Representa as configurações para sorteio de times.
 /// </summary>

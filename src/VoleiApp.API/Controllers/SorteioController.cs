@@ -1,8 +1,9 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using VoleiApp.Application.DTOs.Partida;
-using VoleiApp.Application.UseCases;
+using VoleiApp.Application.DTOs.Sorteio;
+using VoleiApp.Application.Interfaces.Services;
 using VoleiApp.Domain.Entities;
-using VoleiApp.Infrastructure.Persistence;
+using VoleiApp.Domain.Interfaces.Repositories;
 
 namespace VoleiApp.API.Controllers
 {
@@ -10,15 +11,13 @@ namespace VoleiApp.API.Controllers
     [Route("api/[controller]")]
     public class SorteioController : ControllerBase
     {
-        private readonly VoleiContext _context;
-        private readonly SorteioService _sorteioService;
-        private static List<Time> _times = new();
-        private static Queue<Atleta> _reservas = new();
+        readonly ISorteioService _sorteio;
+        readonly IPartidaRepository _partida;
 
-        public SorteioController(VoleiContext context)
+        public SorteioController(ISorteioService sorteio, IPartidaRepository partida)
         {
-            _context = context;
-            _sorteioService = new SorteioService();
+            _sorteio = sorteio;
+            _partida = partida;
         }
 
         /// <summary>
@@ -34,25 +33,25 @@ namespace VoleiApp.API.Controllers
             if (config.Atletas == null || !config.Atletas.Any())
                 return BadRequest("Lista de atletas não pode estar vazia.");
 
-            var resultado = _sorteioService.SortearTimes(config);
+            var resultado = _sorteio.SortearTimes(config);
             return Ok(resultado);
         }
 
         /// <summary>
         /// Substitui jogadores do time perdedor com jogadores da fila de reservas.
         /// </summary>
-        [HttpPost("substituir/{idDoTime}")]
-        public IActionResult Subistituir(int idDoTime)
-        {
-            var time = _times.FirstOrDefault(time => time.ID == idDoTime);
-            if(time == null)
-            {
-                return NotFound("Time não encontrato");
-            }
+        //[HttpPost("substituir/{idDoTime}")]
+        //public IActionResult Subistituir(int idDoTime)
+        //{
+        //    var time = _times.FirstOrDefault(time => time.ID == idDoTime);
+        //    if (time == null)
+        //    {
+        //        return NotFound("Time não encontrato");
+        //    }
 
-            var substituicao = _sorteioService.SubstituirJogadores(time, _reservas);
-            return Ok( substituicao );
-        }
+        //    var substituicao = _sorteioService.SubstituirJogadores(time, _reservas);
+        //    return Ok(substituicao);
+        //}
 
         /// <summary>
         /// Salva uma nova partida a partir do resultado do sorteio.
@@ -70,8 +69,7 @@ namespace VoleiApp.API.Controllers
                 Substituicoes = new List<Substituicao>()
             };
 
-            _context.Partidas.Add(partida);
-            await _context.SaveChangesAsync();
+            await _partida.AddAsync(partida);
 
             return CreatedAtAction(nameof(SalvarPartida), new { id = partida.ID }, partida);
         }

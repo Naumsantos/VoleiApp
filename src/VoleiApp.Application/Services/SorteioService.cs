@@ -1,11 +1,13 @@
-﻿using VoleiApp.Domain.Entities;
+﻿using VoleiApp.Application.DTOs.Sorteio;
+using VoleiApp.Application.Interfaces.Services;
+using VoleiApp.Domain.Entities;
 
-namespace VoleiApp.Application.UseCases
+namespace VoleiApp.Application.Services
 {
-    public class SorteioService
+    public class SorteioService : ISorteioService
     {
         readonly Random _random = new();
-        public SorteioResultDTO SortearTimes(SorteioConfigDTO config)
+        public Task<SorteioResultDTO> SortearTimes(SorteioConfigDTO config)
         {
             var embaralhados = config.Atletas.OrderBy(_ => Guid.NewGuid()).ToList();
             var times = new List<Time>();
@@ -27,20 +29,20 @@ namespace VoleiApp.Application.UseCases
             // Reservas: o que sobrou depois de formar os times
             reservas = embaralhados.Skip(totalTimes * qtdPorTime).ToList();
 
-            return new SorteioResultDTO
+            return Task.FromResult(new SorteioResultDTO
             {
                 Times = times,
                 Reservas = reservas
-            };
+            });
         }
 
-        public Substituicao SubstituirJogadores(Time timePerdedor, Queue<Atleta> reservas, int qtdSubstituicoes = 1)
+        public Task<Substituicao> SubstituirJogadores(Time timePerdedor, Queue<Atleta> reservas, int qtdSubstituicoes = 1)
         {
-            var sairam = timePerdedor.Atletas.OrderBy(a => _random.Next()).Take((int)qtdSubstituicoes).ToList();
+            var sairam = timePerdedor.Atletas.OrderBy(a => _random.Next()).Take(qtdSubstituicoes).ToList();
             var entraram = new List<Atleta>();
 
-            foreach (var item in sairam) 
-            { 
+            foreach (var item in sairam)
+            {
                 if (reservas.Count == 0) break;
                 var novo = reservas.Dequeue();
                 entraram.Add(novo);
@@ -49,12 +51,12 @@ namespace VoleiApp.Application.UseCases
                 reservas.Enqueue(item);
             }
 
-            return new Substituicao
+            return Task.FromResult(new Substituicao
             {
                 Id = timePerdedor.ID,
                 Entraram = entraram,
                 Sairam = sairam
-            };
+            });
         }
 
     }

@@ -1,91 +1,165 @@
-﻿# 🏐 VoleiApp - Sorteio de Times de Vôlei
+﻿# 🏐 VoleiApp — Sorteio e Gestão de Times de Vôlei
 
-Este projeto é um aplicativo backend em .NET 8 para sorteio e gerenciamento de times de vôlei. Ele permite:
+Backend em **ASP.NET Core** para organizar peladas de vôlei com sorteio de times, reservas, substituições e histórico de partidas.
 
-- Cadastro de atletas e suas posições
-- Sorteio automático de times com base nas posições
-- Controle de reservas e substituições de jogadores
-- Registro e histórico de partidas
+> Objetivo do projeto: transformar o processo manual (papel) em uma aplicação real, evoluindo com boas práticas de arquitetura e engenharia de software.
 
 ---
 
-## 📦 Tecnologias utilizadas
+## ✅ Status atual
 
-- ASP.NET Core 8.0
-- Entity Framework Core (InMemory)
-- Swagger/OpenAPI
+O projeto foi reorganizado para uma base mais profissional com:
+
+- **Clean Architecture (camadas)**
+- **Injeção de Dependência (DI)**
+- **Repository Pattern**
+- **Services via interfaces**
+- **Persistência com SQLite (EF Core)**
+
+---
+
+## 🧱 Arquitetura
+
+Estrutura atual:
+
+- `src/VoleiApp.API`  
+  Camada de entrada HTTP (controllers, Program, composição da aplicação)
+- `src/VoleiApp.Application`  
+  Casos de uso, serviços de aplicação, DTOs e contratos de serviço
+- `src/VoleiApp.Domain`  
+  Entidades e contratos de domínio (interfaces de repositório)
+- `src/VoleiApp.Infrastructure`  
+  Persistência com EF Core (`VoleiContext`) e implementações de repositório
+- `tests/`  
+  Projetos reservados para testes unitários e de integração (evolução contínua)
+
+---
+
+## 🛠️ Tecnologias
+
 - C#
+- ASP.NET Core
+- Entity Framework Core
+- SQLite
+- OpenAPI (Swagger)
 
 ---
 
-## 🚀 Como rodar o projeto
+## ▶️ Como executar localmente
+
+### Pré-requisitos
+- .NET SDK instalado (compatível com o `TargetFramework` do projeto)
+- CLI do .NET
+
+### Passos
 
 1. Clone o repositório:
    ```bash
-   git clone https://github.com/Naumsantos/voleiapp.git
-   cd voleiapp
+   git clone https://github.com/Naumsantos/VoleiApp.git
+   cd VoleiApp
    ```
 
-2. Abra o projeto no **Visual Studio 2022+** ou **VS Code** com o SDK .NET 8 instalado.
-
-3. Execute o projeto:
+2. Restaure os pacotes:
    ```bash
-   dotnet run
+   dotnet restore
    ```
 
-4. Acesse a documentação Swagger:
+3. Compile:
+   ```bash
+   dotnet build
    ```
-   http://localhost:5000/swagger
+
+4. Execute a API:
+   ```bash
+   dotnet run --project src/VoleiApp.API
    ```
+
+5. Acesse OpenAPI/Swagger (ambiente de desenvolvimento):
+   - URL padrão conforme saída do terminal (ex.: `https://localhost:xxxx/openapi`)
 
 ---
 
-## 📚 Funcionalidades disponíveis
+## ⚙️ Configuração
 
-### Atletas
+`src/VoleiApp.API/appsettings.json`:
 
-- `GET /api/atletas`: Lista todos os atletas
-- `POST /api/atletas`: Cadastra um novo atleta
-- `PUT /api/atletas/{id}`: Atualiza um atleta existente
-- `DELETE /api/atletas/{id}`: Remove um atleta
-
-### Sorteio de Times
-
-- `POST /api/sorteio/sortear`: Realiza o sorteio com base em:
-  ```json
-  {
-    "numeroDeTimes": 4,
-    "jogadoresPorTime": 4
+```json
+{
+  "ConnectionStrings": {
+    "DefaultConnection": "Data Source=voleiapp.db"
   }
-  ```
-- `POST /api/sorteio/substituir/{idDoTime}`: Substitui jogadores do time perdedor com os reservas
-
-### Partidas
-
-- `POST /api/partidas`: Registra uma nova partida com substituições
-- `GET /api/partidas`: Lista partidas registradas
-- `GET /api/partidas/{id}`: Retorna detalhes de uma partida
+}
+```
 
 ---
 
-## 🧠 Estrutura do Projeto
+## 📌 Endpoints atuais (resumo)
 
-- `Models/`: Modelos principais (`Atleta`, `Time`, `Partida`, `Substituicao`, etc.)
-- `Data/`: Contexto do banco de dados `VoleiContext`
-- `Services/`: `SorteioService` para lógica de sorteio e substituição
-- `Controllers/`: API REST organizada por domínio
-- `Program.cs`: Configuração do pipeline e serviços da aplicação
+### Sorteio
+- `POST /api/sorteio/sortear`
+  - Realiza sorteio com base na configuração enviada (atletas + tamanho do time)
 
----
+- `POST /api/sorteio/salvar`
+  - Salva uma partida com Time A e Time B
 
-## 📌 Próximas etapas (planejado)
-
-- Implementar CRUD completo para Times
-- Persistência real (SQLite, PostgreSQL, etc.)
-- Autenticação e perfis (admin, jogador)
-- Estatísticas de desempenho por atleta
-- Aplicativo mobile (Blazor/MAUI ou Flutter)
+> Observação: a regra avançada por posição (2 atacantes + 1 meio + 1 levantador com fallback) será implementada na próxima etapa (PR 2).
 
 ---
 
-> Feito com 💡 por Naum Santos Mourão — contribuição, crítica ou fork são bem-vindos!
+## 🧠 Modelo de domínio (atual)
+
+Principais entidades:
+
+- `Atleta`
+- `Time`
+- `Partida`
+- `Substituicao`
+- `SorteioConfig` (e DTOs correlatos na Application)
+
+---
+
+## 🔌 Contratos e DI
+
+### Repositórios (Domain)
+- `IAtletaRepository`
+- `IPartidaRepository`
+
+### Serviços (Application)
+- `ISorteioService`
+
+### Implementações (Infrastructure/Application)
+- `AtletaRepository`
+- `PartidaRepository`
+- `SorteioService`
+
+Registrados via DI no `Program.cs`.
+
+---
+
+## 🗺️ Roadmap (próximas evoluções)
+
+### PR 2 (negócio)
+- Regra de formação por posição:
+  - **2 Atacantes + 1 Meio + 1 Levantador**
+- Fallback quando faltar posição
+- Retorno explicável (times incompletos, fallback aplicado, reservas)
+
+### PR 3 (qualidade)
+- Testes unitários do algoritmo de sorteio
+- Testes de integração dos endpoints críticos
+
+### Evoluções futuras
+- Autenticação/autorização
+- Métricas e observabilidade
+- Ranking/nível por atleta
+- Regras de balanceamento avançado
+
+---
+
+## 🤝 Contribuição
+
+Contribuições são bem-vindas via Issue/PR com contexto claro da mudança.
+
+---
+
+Feito com foco em evolução contínua e arquitetura limpa. 🚀
