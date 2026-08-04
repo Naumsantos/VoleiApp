@@ -1,5 +1,7 @@
 ﻿using VoleiApp.Domain.Entities;
 
+namespace VoleiApp.Application.DTOs.Sorteio;
+
 /// <summary>
 /// Resultado do sorteio com os times e reservas.
 /// </summary>
