@@ -43,6 +43,7 @@ namespace VoleiApp.Application.Services
             var poolMeios = todos.Where(a => _meios.Contains(a.Posicao)).ToList();
             var poolLevantadores = todos.Where(a => _levantadores.Contains(a.Posicao)).ToList();
 
+            // quantos times ideais dá para montar
             int maxIdeais = new[]
             {
                 poolAtacantes.Count     / config.AtacantesPorTime,
@@ -64,6 +65,12 @@ namespace VoleiApp.Application.Services
             {
                 var restantes = todos.Where(a => !usados.Contains(a.ID)).ToList();
 
+                // Pré-indexa os atletas restantes por posição para busca eficiente
+                var atletasPorPosicao = restantes
+                    .Where(a => !usados.Contains(a.ID))
+                    .GroupBy(a => a.Posicao)
+                    .ToDictionary(g => g.Key, g => new Queue<Atleta>(g));
+
                 while (restantes.Count >= config.TamanhoDoTime)
                 {
                     var time = new Time
@@ -81,9 +88,17 @@ namespace VoleiApp.Application.Services
 
                     foreach (var (posicoes, qtd) in blocos)
                     {
-                        for (var i = 0; i > qtd; i++)
+                        for (var i = 0; i < qtd; i++)
                         {
-                            var candidato = restantes.FirstOrDefault(a => !usados.Contains(a.ID) && posicoes.Contains(a.Posicao));
+                            Atleta candidato = null;
+                            foreach (var posicao in posicoes)
+                            {
+                                if (atletasPorPosicao.TryGetValue(posicao, out var fila) && fila.Count > 0)
+                                {
+                                    candidato = fila.Dequeue();
+                                    break;
+                                }
+                            }
 
                             if (candidato is not null)
                             {
@@ -112,7 +127,7 @@ namespace VoleiApp.Application.Services
             }
 
             result.Reservas = todos.Where(a => !usados.Contains(a.ID)).ToList();
-            result.TimesIncompletos = result.Times.Count(t => TimeEhIdeal(t, config));
+            result.TimesIncompletos = result.Times.Count(t => !TimeEhIdeal(t, config));
 
             if (result.TimesIncompletos > 0)
                 result.Warnings.Add($"{result.TimesIncompletos} time(s) não ficaram no formato ideal {config.AtacantesPorTime}A+{config.MeiosPorTime}M+{config.LevantadoresPorTime}L.");
@@ -148,19 +163,20 @@ namespace VoleiApp.Application.Services
 
         private static bool TimeEhIdeal(Time time, SorteioConfigDTO config)
         {
-            int atac = time.Atletas.Count(a => _atacantes.Contains(a.Posicao));
-            int meio = time.Atletas.Count(m => _atacantes.Contains(m.Posicao));
-            int levanador = time.Atletas.Count(l => _atacantes.Contains(l.Posicao));
+            int atac = time.Atletas.Count(a => _atacantes.Contains(a.Posicao) && !_meios.Contains(a.Posicao) && !_levantadores.Contains(a.Posicao));
+            int meio = time.Atletas.Count(m => _meios.Contains(m.Posicao));
+            int levantador = time.Atletas.Count(l => _levantadores.Contains(l.Posicao));
 
             return atac >= config.AtacantesPorTime &&
                    meio >= config.MeiosPorTime &&
-                   levanador >= config.LevantadoresPorTime;
+                   levantador >= config.LevantadoresPorTime;
         }
 
         private static List<Atleta> Retirar(List<Atleta> pool, int qtd, HashSet<int> usados)
         {
             var escolhidos = pool.Where(a => !usados.Contains(a.ID)).Take(qtd).ToList();
             foreach (var a in escolhidos) usados.Add(a.ID);
+
             return escolhidos;
         }
 
