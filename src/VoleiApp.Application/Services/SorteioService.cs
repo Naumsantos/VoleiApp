@@ -138,21 +138,42 @@ namespace VoleiApp.Application.Services
             return Task.FromResult(result);
         }
 
-        public Task<Substituicao> SubstituirJogadores(Time timePerdedor, Queue<Atleta> reservas, int qtdSubstituicoes = 1)
+        public Task<Substituicao> SubstituirJogadores(Time timePerdedor, Queue<Atleta> reservas)
         {
-            var sairam = timePerdedor.Atletas.OrderBy(_ => _random.Next()).Take(qtdSubstituicoes).ToList();
+            var sairam = new List<Atleta>();
             var entraram = new List<Atleta>();
 
-            foreach (var saindo in sairam)
-            {
-                if (reservas.Count == 0) break;
-                var novo = reservas.Dequeue();
-                entraram.Add(novo);
-                timePerdedor.Atletas.Remove(saindo);
-                timePerdedor.Atletas.Add(novo);
-                reservas.Enqueue(saindo);
-            }
+            var reservasPorPosicao = reservas
+                .GroupBy(a => a.Posicao)
+                .ToDictionary(g => g.Key, g => new Queue<Atleta>(g));
 
+            foreach (var (posicao, filaReservas) in reservasPorPosicao)
+            {
+                var titulares = timePerdedor.Atletas.Where(a => a.Posicao == posicao).ToList();
+
+                foreach (var titular in titulares)
+                {
+                    if (filaReservas.Count == 0) break;
+
+                    var reserva = filaReservas.Dequeue();
+
+                    entraram.Add(reserva);
+                    sairam.Add(titular);
+
+                    timePerdedor.Atletas.Remove(titular);
+                    timePerdedor.Atletas.Add(reserva);
+
+                    //coloca os titulares substituidos na lista de reservas
+                    var listaRervas = reservas.ToList();
+                    listaRervas.Remove(reserva);
+                    listaRervas.Add(titular);
+
+                    reservas.Clear();
+                    foreach (var r in listaRervas)
+                        reservas.Enqueue(r);
+                }
+
+            }
             return Task.FromResult(new Substituicao
             {
                 Id = timePerdedor.ID,
