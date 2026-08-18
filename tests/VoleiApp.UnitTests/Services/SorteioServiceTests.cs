@@ -172,5 +172,61 @@ namespace VoleiApp.UnitTests.Services
 
             Assert.Equal(todosIds.Count, idsUnicos.Count);
         }
+
+        // ----- Cenário 7: substituição rotaciona reserva corretamente -----
+        [Fact]
+        public async Task SubstituirJogadores_DeveRotacionarReservasCorretamente()
+        {
+            var timePerdedor = new Time
+            {
+                ID = 1,
+                Nome = "Time 1",
+                Atletas = [
+                    Atleta(1, "Ponteiro 1", EPosicao.Ponteiro),
+                    Atleta(2, "Ponteiro 2", EPosicao.Ponteiro),
+                    Atleta(3, "Meio 1", EPosicao.Central),
+                    Atleta(4, "Levantador 1", EPosicao.Levantador),
+                ]
+            };
+
+            var reservas = new Queue<Atleta>();
+            reservas.Enqueue(Atleta(1, "Reserva 1", EPosicao.Levantador));
+            reservas.Enqueue(Atleta(2, "Reserva 2", EPosicao.Central));
+
+            var substituicao = await _service.SubstituirJogadores(timePerdedor, reservas);
+
+            //quem saiu não está mais no time
+            Assert.DoesNotContain(timePerdedor.Atletas, a => substituicao.Sairam.Select(s => s.ID).Contains(a.ID));
+
+            //quem entrou estoa no time
+            Assert.Contains(timePerdedor.Atletas, a => substituicao.Entraram.Select(s => s.ID).Contains(a.ID));
+
+            //quem saiu voltou para a fila de reservas
+            Assert.Contains(reservas, a => substituicao.Sairam.Select(s => s.ID).Contains(a.ID));
+        }
+
+        // ----- Cenário 8: substituição sem reservas disponíveis -----
+        [Fact]
+        public async Task SubstituirJogadores_QuandoSemReservas_NaoDeveAlterarTime()
+        {
+            // Arrange
+            var atletas = new List<Atleta>
+            {
+                Atleta(1, "Ponteiro 1",   EPosicao.Ponteiro),
+                Atleta(2, "Ponteiro 2",   EPosicao.Ponteiro),
+                Atleta(3, "Central 1",    EPosicao.Central),
+                Atleta(4, "Levantador 1", EPosicao.Levantador),
+            };
+
+            var timePerdedor = new Time { ID = 1, Nome = "Time 1", Atletas = atletas };
+            var reservas = new Queue<Atleta>(); // vazia
+
+            // Act
+            var substituicao = await _service.SubstituirJogadores(timePerdedor, reservas);
+
+            // Assert
+            Assert.Empty(substituicao.Entraram);
+            Assert.Equal(4, timePerdedor.Atletas.Count); // time intacto
+        }
     }
 }
