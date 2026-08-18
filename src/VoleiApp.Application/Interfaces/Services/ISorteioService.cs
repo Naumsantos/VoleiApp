@@ -6,6 +6,6 @@ namespace VoleiApp.Application.Interfaces.Services
     public interface ISorteioService
     {
         Task<SorteioResultDTO> SortearTimes(SorteioConfigDTO config);
-        Task<Substituicao> SubstituirJogadores(Time timePerdedor, Queue<Atleta> reservas, int qtdSubstituicoes = 1);
+        Task<Substituicao> SubstituirJogadores(Time timePerdedor, Queue<Atleta> reservas);
     }
 }
