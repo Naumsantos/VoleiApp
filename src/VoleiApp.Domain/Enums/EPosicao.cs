@@ -1,10 +1,9 @@
-﻿
-namespace VoleiApp.Domain.Entities
+﻿namespace VoleiApp.Domain.Enums
 {
     public enum EPosicao
     {
         Levantador,
-        Libero,
+        //Libero,
         Ponteiro,
         Central,
         Oposto
