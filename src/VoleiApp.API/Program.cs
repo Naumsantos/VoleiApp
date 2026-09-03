@@ -11,6 +11,7 @@ builder.Services.AddControllers();
 
 // Services
 builder.Services.AddScoped<ISorteioService, SorteioService>();
+builder.Services.AddScoped<IAtletaService, AtletaService>();
 
 // Repositories
 builder.Services.AddScoped<IAtletaRepository, AtletaRepository>();
