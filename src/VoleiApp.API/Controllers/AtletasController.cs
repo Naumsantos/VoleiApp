@@ -1,7 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using VoleiApp.Domain.Entities;
-using VoleiApp.Infrastructure.Persistence;
+using VoleiApp.Application.DTOs.Atleta;
+using VoleiApp.Application.Interfaces.Services;
 
 namespace VoleiApp.API.Controllers
 {
@@ -9,74 +8,88 @@ namespace VoleiApp.API.Controllers
     [Route("api/[controller]")]
     public class AtletasController : ControllerBase
     {
-        private readonly VoleiContext _context;
+        private readonly IAtletaService _atletaService;
 
-        public AtletasController( VoleiContext context )
+        public AtletasController(IAtletaService atletaService)
         {
-            _context = context;
+            _atletaService = atletaService;
         }
 
         /// <summary>
         /// Retorna todos os atletas cadastrados.
         /// </summary>
         [HttpGet]
-        public ActionResult<IEnumerable<Atleta>> GetAll()
+        public async Task<ActionResult<List<AtletaResponseDTO>>> GetAll(CancellationToken ct)
         {
-           return _context.Atletas.ToList();
+            var atletas = await _atletaService.GetAllAsync(ct);
+            return Ok(atletas);
         }
 
         /// <summary>
         /// Retorna um atleta por ID.
         /// </summary>
         [HttpGet("{id}")]
-        public ActionResult<Atleta> GetById(int ID)
+        public async Task<ActionResult<AtletaResponseDTO>> GetById(int ID, CancellationToken ct)
         {
-            var atleta = _context.Atletas.Find(ID);
+            var atleta = await _atletaService.GetByIdAsync(ID, ct);
 
-            return atleta == null ? NotFound() : atleta;
+            return atleta == null ? NotFound() : Ok(atleta);
         }
 
         /// <summary>
         /// Cadastra um novo atleta
         /// </summary>
         [HttpPost]
-        public ActionResult<Atleta> Create([FromBody] Atleta atleta)
+        public async Task<ActionResult<AtletaResponseDTO>> Create([FromBody] CriarAtletaDTO atleta, CancellationToken ct)
         {
-            _context.Atletas.Add(atleta);
-            _context.SaveChanges();
+            try
+            {
+                var atletaCriado = await _atletaService.CreateAsync(atleta, ct);
 
-            return CreatedAtAction(nameof(GetById), new {id = atleta.ID}, atleta);
+                return CreatedAtAction(nameof(GetById), new { id = atletaCriado.ID }, atletaCriado);
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(ex.Message);
+            }
         }
 
         /// <summary>
         /// Atualiza os dados do atleta existente.
         /// </summary>
         [HttpPut("{id}")]
-        public IActionResult Update(int id, [FromBody] Atleta atleta)
+        public async Task<IActionResult> Update(int id, [FromBody] AtualizarAtletaDTO atleta, CancellationToken ct)
         {
-            if (id != atleta.ID) return BadRequest();
-
-            if (!_context.Atletas.Any( a => a.ID == id)) return NotFound();
-
-            _context.Entry(atleta).State = EntityState.Modified;
-            _context.SaveChanges();
-
-            return NoContent();
+            try
+            {
+                await _atletaService.UpdateAsync(id, atleta, ct);
+                return NoContent();
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(ex.Message);
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(ex.Message);
+            }
         }
 
         /// <summary>
         /// Deleta um atleta por ID
         /// </summary>
         [HttpDelete("{id}")]
-        public IActionResult Delete(int id)
+        public async Task<IActionResult> Delete(int id, CancellationToken ct)
         {
-            var atleta = _context.Atletas.Find(id);
-            if (atleta == null) return NotFound();
-
-            _context.Atletas.Remove(atleta);
-            _context.SaveChanges();
-
-            return NoContent();
+            try
+            {
+                await _atletaService.DeleteAsync(id, ct);
+                return NoContent();
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(ex.Message);
+            }
         }
     }
 }

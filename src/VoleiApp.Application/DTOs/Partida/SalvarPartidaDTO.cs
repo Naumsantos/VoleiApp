@@ -7,8 +7,8 @@ namespace VoleiApp.Application.DTOs.Partida
     /// </summary>
     public class SalvarPartidaDTO
     {
-        public Time TimeA { get; set; }
-        public Time TimeB { get; set; }
-        public List<Atleta>? Reservas { get; set; }
+        public Time TimeA { get; set; } = new();
+        public Time TimeB { get; set; } = new();
+        public List<VoleiApp.Domain.Entities.Atleta>? Reservas { get; set; }
     }
 }

@@ -15,7 +15,7 @@ public class SorteioResultDTO
     /// <summary>
     /// Lista de atletas que ficaram como reservas.
     /// </summary>
-    public List<Atleta> Reservas { get; set; } = new();
+    public List<VoleiApp.Domain.Entities.Atleta> Reservas { get; set; } = new();
 
     /// <summary>
     /// Avisos sobre fallback ou times incompletos.

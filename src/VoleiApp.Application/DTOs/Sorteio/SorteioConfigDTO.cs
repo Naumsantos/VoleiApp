@@ -1,6 +1,4 @@
-﻿using VoleiApp.Domain.Entities;
-
-namespace VoleiApp.Application.DTOs.Sorteio;
+﻿namespace VoleiApp.Application.DTOs.Sorteio;
 
 /// <summary>
 /// Representa as configurações para sorteio de times.
@@ -10,7 +8,7 @@ public class SorteioConfigDTO
     /// <summary>
     /// Lista de atletas disponíveis para o sorteio.
     /// </summary>
-    public List<Atleta> Atletas { get; set; } = new();
+    public List<VoleiApp.Domain.Entities.Atleta> Atletas { get; set; } = new();
 
     /// <summary>
     /// Quantidade de atletas por time (2, 4 ou 6).
