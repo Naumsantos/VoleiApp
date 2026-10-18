@@ -4,6 +4,9 @@
     {
         public int ID { get; set; }
         public string Nome { get; set; } = string.Empty;
-        public List<Atleta> Atletas { get; set; } = new();
+        public List<TimeAtleta> Atletas { get; set; } = new();
+
+        public int? PartidaId { get; set; }
+        public Partida? Partida { get; set; }
     }
 }
