@@ -181,12 +181,13 @@ namespace VoleiApp.UnitTests.Services
             {
                 ID = 1,
                 Nome = "Time 1",
-                Atletas = [
-                    Atleta(1, "Ponteiro 1", EPosicao.Ponteiro),
-                    Atleta(2, "Ponteiro 2", EPosicao.Ponteiro),
-                    Atleta(3, "Meio 1", EPosicao.Central),
-                    Atleta(4, "Levantador 1", EPosicao.Levantador),
-                ]
+                Atletas = new List<TimeAtleta>
+                {
+                    new TimeAtleta { Atleta = Atleta(1, "Ponteiro 1", EPosicao.Ponteiro), AtletaId = 1 },
+                    new TimeAtleta { Atleta = Atleta(2, "Ponteiro 2", EPosicao.Ponteiro), AtletaId = 2 },
+                    new TimeAtleta { Atleta = Atleta(3, "Meio 1", EPosicao.Central), AtletaId = 3 },
+                    new TimeAtleta { Atleta = Atleta(4, "Levantador 1", EPosicao.Levantador), AtletaId = 4 },
+                }
             };
 
             var reservas = new Queue<Atleta>();
@@ -195,13 +196,13 @@ namespace VoleiApp.UnitTests.Services
 
             var substituicao = await _service.SubstituirJogadores(timePerdedor, reservas);
 
-            //quem saiu não está mais no time
-            Assert.DoesNotContain(timePerdedor.Atletas, a => substituicao.Sairam.Select(s => s.ID).Contains(a.ID));
+            // quem saiu não está mais no time (comparar com AtletaId dos TimeAtleta)
+            Assert.DoesNotContain(timePerdedor.Atletas, ta => substituicao.Sairam.Select(s => s.ID).Contains(ta.AtletaId));
 
-            //quem entrou estoa no time
-            Assert.Contains(timePerdedor.Atletas, a => substituicao.Entraram.Select(s => s.ID).Contains(a.ID));
+            // quem entrou está no time (comparar com AtletaId dos TimeAtleta)
+            Assert.Contains(timePerdedor.Atletas, ta => substituicao.Entraram.Select(s => s.ID).Contains(ta.AtletaId));
 
-            //quem saiu voltou para a fila de reservas
+            // quem saiu voltou para a fila de reservas
             Assert.Contains(reservas, a => substituicao.Sairam.Select(s => s.ID).Contains(a.ID));
         }
 
@@ -210,12 +211,12 @@ namespace VoleiApp.UnitTests.Services
         public async Task SubstituirJogadores_QuandoSemReservas_NaoDeveAlterarTime()
         {
             // Arrange
-            var atletas = new List<Atleta>
+            var atletas = new List<TimeAtleta>
             {
-                Atleta(1, "Ponteiro 1",   EPosicao.Ponteiro),
-                Atleta(2, "Ponteiro 2",   EPosicao.Ponteiro),
-                Atleta(3, "Central 1",    EPosicao.Central),
-                Atleta(4, "Levantador 1", EPosicao.Levantador),
+                new TimeAtleta { Atleta = Atleta(1, "Ponteiro 1", EPosicao.Ponteiro), AtletaId = 1 },
+                new TimeAtleta { Atleta = Atleta(2, "Ponteiro 2", EPosicao.Ponteiro), AtletaId = 2 },
+                new TimeAtleta { Atleta = Atleta(3, "Meio 1", EPosicao.Central), AtletaId = 3 },
+                new TimeAtleta { Atleta = Atleta(4, "Levantador 1", EPosicao.Levantador), AtletaId = 4 },
             };
 
             var timePerdedor = new Time { ID = 1, Nome = "Time 1", Atletas = atletas };
