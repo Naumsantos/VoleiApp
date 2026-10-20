@@ -31,32 +31,40 @@ namespace VoleiApp.Infrastructure.Persistence
             modelBuilder.Entity<Partida>()
                 .HasMany(p => p.Reservas)
                 .WithOne(r => r.Partida)
-                .HasForeignKey(p => p.PartidaId)
+                .HasForeignKey(r => r.PartidaId)
                 .OnDelete(DeleteBehavior.Cascade);
 
             modelBuilder.Entity<Partida>()
                 .HasMany(p => p.Substituicoes)
                 .WithOne(s => s.Partida)
-                .HasForeignKey(p => p.PartidaId)
+                .HasForeignKey(s => s.PartidaId)
                 .OnDelete(DeleteBehavior.Cascade);
 
             modelBuilder.Entity<Time>()
                 .HasMany(t => t.Atletas)
                 .WithOne(ta => ta.Time)
-                .HasForeignKey(t => t.TimeId)
+                .HasForeignKey(ta => ta.TimeId)
                 .OnDelete(DeleteBehavior.Cascade);
 
             modelBuilder.Entity<TimeAtleta>()
-                .HasOne(t => t.Atleta)
+                .HasOne(ta => ta.Atleta)
                 .WithMany()
-                .HasForeignKey(t => t.AtletaId)
+                .HasForeignKey(ta => ta.AtletaId)
                 .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<TimeAtleta>()
+                .HasIndex(ta => new { ta.TimeId, ta.AtletaId })
+                .IsUnique();
 
             modelBuilder.Entity<PartidaReserva>()
                 .HasOne(pr => pr.Atleta)
                 .WithMany()
                 .HasForeignKey(pr => pr.AtletaId)
                 .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<PartidaReserva>()
+                .HasIndex(pr => new { pr.PartidaId, pr.AtletaId })
+                .IsUnique();
 
             modelBuilder.Entity<Substituicao>()
                 .HasOne(s => s.Time)
@@ -66,12 +74,29 @@ namespace VoleiApp.Infrastructure.Persistence
 
             modelBuilder.Entity<Substituicao>()
                 .HasMany(s => s.Entraram)
-                .WithMany();
+                .WithMany()
+                .UsingEntity<Dictionary<string, object>>(
+                    "SubstituicaoEntradas",
+                    l => l.HasOne<Atleta>().WithMany().HasForeignKey("AtletaId").OnDelete(DeleteBehavior.Cascade),
+                    r => r.HasOne<Substituicao>().WithMany().HasForeignKey("SubstituicaoId").OnDelete(DeleteBehavior.Cascade),
+                    j =>
+                    {
+                        j.HasKey("SubstituicaoId", "AtletaId");
+                        j.ToTable("SubstituicaoEntradas");
+                    });
 
             modelBuilder.Entity<Substituicao>()
                 .HasMany(s => s.Sairam)
-                .WithMany();
-
+                .WithMany()
+                .UsingEntity<Dictionary<string, object>>(
+                    "SubstituicaoSaidas",
+                    l => l.HasOne<Atleta>().WithMany().HasForeignKey("AtletaId").OnDelete(DeleteBehavior.Cascade),
+                    r => r.HasOne<Substituicao>().WithMany().HasForeignKey("SubstituicaoId").OnDelete(DeleteBehavior.Cascade),
+                    j =>
+                    {
+                        j.HasKey("SubstituicaoId", "AtletaId");
+                        j.ToTable("SubstituicaoSaidas");
+                    });
         }
     }
 }

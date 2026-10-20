@@ -17,34 +17,34 @@ namespace VoleiApp.Infrastructure.Migrations
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "10.0.10");
 
-            modelBuilder.Entity("AtletaSubstituicao", b =>
+            modelBuilder.Entity("SubstituicaoEntradas", b =>
                 {
-                    b.Property<int>("EntraramID")
-                        .HasColumnType("INTEGER");
-
                     b.Property<int>("SubstituicaoId")
                         .HasColumnType("INTEGER");
 
-                    b.HasKey("EntraramID", "SubstituicaoId");
+                    b.Property<int>("AtletaId")
+                        .HasColumnType("INTEGER");
 
-                    b.HasIndex("SubstituicaoId");
+                    b.HasKey("SubstituicaoId", "AtletaId");
 
-                    b.ToTable("AtletaSubstituicao");
+                    b.HasIndex("AtletaId");
+
+                    b.ToTable("SubstituicaoEntradas", (string)null);
                 });
 
-            modelBuilder.Entity("AtletaSubstituicao1", b =>
+            modelBuilder.Entity("SubstituicaoSaidas", b =>
                 {
-                    b.Property<int>("SairamID")
+                    b.Property<int>("SubstituicaoId")
                         .HasColumnType("INTEGER");
 
-                    b.Property<int>("Substituicao1Id")
+                    b.Property<int>("AtletaId")
                         .HasColumnType("INTEGER");
 
-                    b.HasKey("SairamID", "Substituicao1Id");
+                    b.HasKey("SubstituicaoId", "AtletaId");
 
-                    b.HasIndex("Substituicao1Id");
+                    b.HasIndex("AtletaId");
 
-                    b.ToTable("AtletaSubstituicao1");
+                    b.ToTable("SubstituicaoSaidas", (string)null);
                 });
 
             modelBuilder.Entity("VoleiApp.Domain.Entities.Atleta", b =>
@@ -114,7 +114,8 @@ namespace VoleiApp.Infrastructure.Migrations
 
                     b.HasIndex("AtletaId");
 
-                    b.HasIndex("PartidaId");
+                    b.HasIndex("PartidaId", "AtletaId")
+                        .IsUnique();
 
                     b.ToTable("PartidaReservas");
                 });
@@ -153,12 +154,7 @@ namespace VoleiApp.Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("TEXT");
 
-                    b.Property<int?>("PartidaId")
-                        .HasColumnType("INTEGER");
-
                     b.HasKey("ID");
-
-                    b.HasIndex("PartidaId");
 
                     b.ToTable("Times");
                 });
@@ -179,16 +175,17 @@ namespace VoleiApp.Infrastructure.Migrations
 
                     b.HasIndex("AtletaId");
 
-                    b.HasIndex("TimeId");
+                    b.HasIndex("TimeId", "AtletaId")
+                        .IsUnique();
 
                     b.ToTable("TimeAtletas");
                 });
 
-            modelBuilder.Entity("AtletaSubstituicao", b =>
+            modelBuilder.Entity("SubstituicaoEntradas", b =>
                 {
                     b.HasOne("VoleiApp.Domain.Entities.Atleta", null)
                         .WithMany()
-                        .HasForeignKey("EntraramID")
+                        .HasForeignKey("AtletaId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
@@ -199,17 +196,17 @@ namespace VoleiApp.Infrastructure.Migrations
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("AtletaSubstituicao1", b =>
+            modelBuilder.Entity("SubstituicaoSaidas", b =>
                 {
                     b.HasOne("VoleiApp.Domain.Entities.Atleta", null)
                         .WithMany()
-                        .HasForeignKey("SairamID")
+                        .HasForeignKey("AtletaId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("VoleiApp.Domain.Entities.Substituicao", null)
                         .WithMany()
-                        .HasForeignKey("Substituicao1Id")
+                        .HasForeignKey("SubstituicaoId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
@@ -269,15 +266,6 @@ namespace VoleiApp.Infrastructure.Migrations
                     b.Navigation("Partida");
 
                     b.Navigation("Time");
-                });
-
-            modelBuilder.Entity("VoleiApp.Domain.Entities.Time", b =>
-                {
-                    b.HasOne("VoleiApp.Domain.Entities.Partida", "Partida")
-                        .WithMany()
-                        .HasForeignKey("PartidaId");
-
-                    b.Navigation("Partida");
                 });
 
             modelBuilder.Entity("VoleiApp.Domain.Entities.TimeAtleta", b =>

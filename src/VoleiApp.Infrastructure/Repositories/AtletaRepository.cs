@@ -8,6 +8,7 @@ namespace VoleiApp.Infrastructure.Repositories
     public class AtletaRepository : IAtletaRepository
     {
         readonly VoleiContext _context;
+
         public AtletaRepository(VoleiContext context)
         {
             _context = context;
@@ -33,12 +34,12 @@ namespace VoleiApp.Infrastructure.Repositories
             await _context.SaveChangesAsync(ct);
         }
 
-        public Task<List<Atleta>> GetAllAsync(CancellationToken ct = default)
+        public async Task<List<Atleta>> GetAllAsync(CancellationToken ct = default)
         {
-            return _context.Atletas.AsNoTracking().ToListAsync(ct);
+            return await _context.Atletas.AsNoTracking().ToListAsync(ct);
         }
 
-        public Task<Atleta?> GetByIdAsync(int id, CancellationToken ct = default) => _context.Atletas.FirstOrDefaultAsync(a => a.ID == id, ct);
+        public async Task<Atleta?> GetByIdAsync(int id, CancellationToken ct = default) => await _context.Atletas.FirstOrDefaultAsync(a => a.ID == id, ct);
 
         public async Task UpdateAsync(Atleta atleta, CancellationToken ct = default)
         {
