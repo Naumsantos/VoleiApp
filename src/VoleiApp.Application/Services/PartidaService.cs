@@ -23,43 +23,24 @@ namespace VoleiApp.Application.Services
 
         public async Task<PartidaResponseDTO> CreateAsync(CriarPartidaDTO dto, CancellationToken ct = default)
         {
-            var atletasTimeA = await BuscarAtletas(dto.TimeA.AtletaIds, ct);
-            var atletasTimeB = await BuscarAtletas(dto.TimeB.AtletaIds, ct);
-            var atletasReservas = await BuscarAtletas(dto.ReservaIds, ct);
+            var partida = await MontarPartidaAsync(dto.TimeA.Nome, dto.TimeA.AtletaIds, dto.TimeB.Nome, dto.TimeB.AtletaIds, dto.ReservaIds, ct);
 
-            ValidarDuplicidade(atletasTimeA, atletasTimeB, atletasReservas);
-
-            var timeA = new Time
-            {
-                Nome = dto.TimeA.Nome,
-                Atletas = atletasTimeA.Select(a => new TimeAtleta { AtletaId = a.ID, Atleta = a }).ToList()
-            };
-
-            var timeB = new Time
-            {
-                Nome = dto.TimeB.Nome,
-                Atletas = atletasTimeB.Select(a => new TimeAtleta { AtletaId = a.ID, Atleta = a }).ToList()
-            };
-
-            var partida = new Partida
-            {
-                TimeA = timeA,
-                TimeB = timeB,
-                Reservas = atletasReservas.Select((a, index) =>
-                        new PartidaReserva
-                        {
-                            AtletaId = a.ID,
-                            Atleta = a,
-                            Ordem = index
-                        }
-                    ).ToList(),
-                Substituicoes = []
-            };
-
-            await _partidaRepository.AddAsync(partida, ct);
+            await _partidaRepository.SavePartidaGraphAsync(partida, ct);
 
             var persisted = await _partidaRepository.GetByIdAsync(partida.ID, ct)
                 ?? throw new InvalidOperationException("Partida não encontrada após a criação.");
+
+            return ToResponse(persisted);
+        }
+
+        public async Task<PartidaResponseDTO> SalvarPartidaAsync(SalvarPartidaDTO dto, CancellationToken ct = default)
+        {
+            var partida = await MontarPartidaAsync(dto.TimeA.Nome, dto.TimeA.AtletaIds, dto.TimeB.Nome, dto.TimeB.AtletaIds, dto.ReservaIds, ct);
+
+            await _partidaRepository.SavePartidaGraphAsync(partida, ct);
+
+            var persisted = await _partidaRepository.GetByIdAsync(partida.ID, ct)
+                ?? throw new InvalidOperationException("Partida não encontrada após persistência.");
 
             return ToResponse(persisted);
         }
@@ -74,6 +55,18 @@ namespace VoleiApp.Application.Services
             var partida = await _partidaRepository.GetByIdAsync(id, ct);
 
             return partida is null ? null : ToResponse(partida);
+        }
+
+        public async Task<List<SubstituicaoResponseDTO>> GetSubstituicoesAsync(CancellationToken ct = default)
+        {
+            var substituicoes = await _partidaRepository.GetSubstituicoesAsync(ct);
+            return substituicoes.Select(ToSubstituicaoResponse).ToList();
+        }
+
+        public async Task<SubstituicaoResponseDTO?> GetSubstituicaoByIdAsync(int id, CancellationToken ct = default)
+        {
+            var substituicao = await _partidaRepository.GetSubstituicaoByIdAsync(id, ct);
+            return substituicao is null ? null : ToSubstituicaoResponse(substituicao);
         }
 
         public async Task<PartidaResponseDTO> RegistrarResultadoAsync(int partidaId, RegistrarResultadoPartidaDTO dto, CancellationToken ct = default)
@@ -115,7 +108,14 @@ namespace VoleiApp.Application.Services
 
             timePerdedor.Atletas.Clear();
             foreach (var ta in timePerdedorTemp.Atletas)
-                timePerdedor.Atletas.Add(new TimeAtleta { TimeId = timePerdedor.ID, AtletaId = ta.AtletaId, Atleta = ta.Atleta });
+            {
+                timePerdedor.Atletas.Add(new TimeAtleta
+                {
+                    TimeId = timePerdedor.ID,
+                    AtletaId = ta.AtletaId,
+                    Atleta = ta.Atleta
+                });
+            }
 
             partida.Reservas.Clear();
             int ordem = 0;
@@ -147,6 +147,47 @@ namespace VoleiApp.Application.Services
             return ToResponse(atualizada);
         }
 
+        private async Task<Partida> MontarPartidaAsync(
+            string nomeTimeA,
+            IEnumerable<int> idsTimeA,
+            string nomeTimeB,
+            IEnumerable<int> idsTimeB,
+            IEnumerable<int> idsReservas,
+            CancellationToken ct)
+        {
+            var atletasTimeA = await BuscarAtletas(idsTimeA, ct);
+            var atletasTimeB = await BuscarAtletas(idsTimeB, ct);
+            var atletasReservas = await BuscarAtletas(idsReservas, ct);
+
+            ValidarDuplicidade(atletasTimeA, atletasTimeB, atletasReservas);
+
+            var timeA = new Time
+            {
+                Nome = nomeTimeA,
+                Atletas = atletasTimeA.Select(a => new TimeAtleta { AtletaId = a.ID, Atleta = a }).ToList()
+            };
+
+            var timeB = new Time
+            {
+                Nome = nomeTimeB,
+                Atletas = atletasTimeB.Select(a => new TimeAtleta { AtletaId = a.ID, Atleta = a }).ToList()
+            };
+
+            return new Partida
+            {
+                TimeA = timeA,
+                TimeB = timeB,
+                Reservas = atletasReservas.Select((a, index) =>
+                    new PartidaReserva
+                    {
+                        AtletaId = a.ID,
+                        Atleta = a,
+                        Ordem = index
+                    }).ToList(),
+                Substituicoes = []
+            };
+        }
+
         private async Task<List<Atleta>> BuscarAtletas(IEnumerable<int> ids, CancellationToken ct)
         {
             var atletas = new List<Atleta>();
@@ -154,7 +195,7 @@ namespace VoleiApp.Application.Services
             foreach (var id in ids.Distinct())
             {
                 var atleta = await _atletaRepository.GetByIdAsync(id, ct)
-                    ?? throw new KeyNotFoundException($"Atleta {id} não encontrato");
+                    ?? throw new KeyNotFoundException($"Atleta {id} não encontrado");
 
                 atletas.Add(atleta);
             }
@@ -169,9 +210,18 @@ namespace VoleiApp.Application.Services
                 .Concat(reservas.Select(r => r.ID))
                 .ToList();
 
-            if (ids.Count() != ids.Distinct().Count())
+            if (ids.Count != ids.Distinct().Count())
                 throw new ArgumentException("Um mesmo atleta nao pode estar em times distintos ao mesmo tempo.");
         }
+
+        private static SubstituicaoResponseDTO ToSubstituicaoResponse(Substituicao substituicao) => new()
+        {
+            Id = substituicao.Id,
+            TimeId = substituicao.TimeId,
+            Data = substituicao.Data,
+            Entraram = substituicao.Entraram.Select(ToAtletaResumo).ToList(),
+            Sairam = substituicao.Sairam.Select(ToAtletaResumo).ToList()
+        };
 
         private static PartidaResponseDTO ToResponse(Partida partida) => new()
         {
@@ -182,17 +232,10 @@ namespace VoleiApp.Application.Services
             TimeA = ToTimeResponse(partida.TimeA),
             TimeB = ToTimeResponse(partida.TimeB),
             Reservas = partida.Reservas
-            .OrderBy(r => r.Ordem)
-            .Select(r => ToAtletaResumo(r.Atleta))
-            .ToList(),
-            Substituicoes = partida.Substituicoes.Select(s => new SubstituicaoResponseDTO
-            {
-                Id = s.Id,
-                TimeId = s.TimeId,
-                Data = s.Data,
-                Entraram = s.Entraram.Select(ToAtletaResumo).ToList(),
-                Sairam = s.Sairam.Select(ToAtletaResumo).ToList()
-            }).ToList()
+                .OrderBy(r => r.Ordem)
+                .Select(r => ToAtletaResumo(r.Atleta))
+                .ToList(),
+            Substituicoes = partida.Substituicoes.Select(ToSubstituicaoResponse).ToList()
         };
 
         private static TimeResponseDTO ToTimeResponse(Time time) => new()
