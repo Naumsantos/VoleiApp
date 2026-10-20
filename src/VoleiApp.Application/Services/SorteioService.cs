@@ -13,27 +13,25 @@ namespace VoleiApp.Application.Services
         static readonly EPosicao[] _meios = { EPosicao.Central };
         static readonly EPosicao[] _levantadores = { EPosicao.Levantador };
 
-        public Task<SorteioResultDTO> SortearTimes(SorteioConfigDTO config)
+        public async Task<SorteioResultDTO> SortearTimes(SorteioConfigDTO config)
         {
             if (config.Atletas is null || config.Atletas.Count == 0)
             {
-                return Task.FromResult(
-                    new SorteioResultDTO
-                    {
-                        Warnings = new List<string> { "Lista vazia de atletas" }
-                    }
-                );
+                return new SorteioResultDTO
+                {
+                    Warnings = new List<string> { "Lista vazia de atletas" }
+                };
             }
 
             if (config.AtacantesPorTime + config.LevantadoresPorTime + config.MeiosPorTime != config.TamanhoDoTime)
             {
-                return Task.FromResult(
-                    new SorteioResultDTO
-                    {
-                        Warnings = new List<string> { "Configuração inválida: a soma das posições devem ser igual ao TamanhoDoTime" }
-                    }
-                );
+                return new SorteioResultDTO
+                {
+                    Warnings = new List<string> { "Configuração inválida: a soma das posições devem ser igual ao TamanhoDoTime" }
+                };
             }
+
+            await Task.Yield();
 
             var result = new SorteioResultDTO();
             var usados = new HashSet<int>();
@@ -57,13 +55,13 @@ namespace VoleiApp.Application.Services
                 var atletasTime = new List<TimeAtleta>();
 
                 var escolhidosA = Retirar(poolAtacantes, config.AtacantesPorTime, usados);
-                atletasTime.AddRange(escolhidosA.Select(a => new TimeAtleta { Atleta = a, AtletaId = a.ID }));
+                atletasTime.AddRange(escolhidosA.Select(a => new TimeAtleta { ID = a.ID, Atleta = a, AtletaId = a.ID }));
 
                 var escolhidosM = Retirar(poolMeios, config.MeiosPorTime, usados);
-                atletasTime.AddRange(escolhidosM.Select(a => new TimeAtleta { Atleta = a, AtletaId = a.ID }));
+                atletasTime.AddRange(escolhidosM.Select(a => new TimeAtleta { ID = a.ID, Atleta = a, AtletaId = a.ID }));
 
                 var escolhidosL = Retirar(poolLevantadores, config.LevantadoresPorTime, usados);
-                atletasTime.AddRange(escolhidosL.Select(a => new TimeAtleta { Atleta = a, AtletaId = a.ID }));
+                atletasTime.AddRange(escolhidosL.Select(a => new TimeAtleta { ID = a.ID, Atleta = a, AtletaId = a.ID }));
 
                 result.Times.Add(new Time { Nome = $"Time {result.Times.Count + 1}", Atletas = atletasTime });
             }
@@ -109,7 +107,7 @@ namespace VoleiApp.Application.Services
 
                             if (candidato is not null)
                             {
-                                time.Atletas.Add(new TimeAtleta { Atleta = candidato, AtletaId = candidato.ID });
+                                time.Atletas.Add(new TimeAtleta { ID = candidato.ID, Atleta = candidato, AtletaId = candidato.ID });
                                 usados.Add(candidato.ID);
                                 continue;
                             }
@@ -117,7 +115,7 @@ namespace VoleiApp.Application.Services
                             var fallback = restantes.FirstOrDefault(a => !usados.Contains(a.ID));
                             if (fallback is null) break;
 
-                            time.Atletas.Add(new TimeAtleta { Atleta = fallback, AtletaId = fallback.ID });
+                            time.Atletas.Add(new TimeAtleta { ID = fallback.ID, Atleta = fallback, AtletaId = fallback.ID });
                             usados.Add(fallback.ID);
                             result.FallbackAplicado = true;
                             result.Warnings.Add($"Fallback no {time.Nome}: sem {string.Join("/", posicoes)}, usou {fallback.Posicao} ({fallback.Nome}).");
@@ -147,7 +145,7 @@ namespace VoleiApp.Application.Services
             if (result.Reservas.Count > 0)
                 result.Warnings.Add($"{result.Reservas.Count} atleta(s) ficaram na reserva.");
 
-            return Task.FromResult(result);
+            return result;
         }
 
         public Task<Substituicao> SubstituirJogadores(Time timePerdedor, Queue<Atleta> reservas)
@@ -174,7 +172,7 @@ namespace VoleiApp.Application.Services
 
                     // substituir TimeAtleta
                     timePerdedor.Atletas.Remove(titularTA);
-                    timePerdedor.Atletas.Add(new TimeAtleta { Atleta = reserva, AtletaId = reserva.ID });
+                    timePerdedor.Atletas.Add(new TimeAtleta { ID = reserva.ID, Atleta = reserva, AtletaId = reserva.ID });
 
                     // coloca os titulares substituídos na lista de reservas
                     var listaReservas = reservas.ToList();
@@ -188,7 +186,6 @@ namespace VoleiApp.Application.Services
             }
             return Task.FromResult(new Substituicao
             {
-                Id = timePerdedor.ID,
                 Entraram = entraram,
                 Sairam = sairam
             });
