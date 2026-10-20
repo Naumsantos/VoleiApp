@@ -5,6 +5,9 @@ using VoleiApp.Infrastructure.Persistence;
 
 namespace VoleiApp.API.Controllers
 {
+    /// <summary>
+    /// Endpoints para gerenciamento de times de vôlei.
+    /// </summary>
     [ApiController]
     [Route("api/[controller]")]
     public class TimeController : ControllerBase
@@ -17,9 +20,10 @@ namespace VoleiApp.API.Controllers
         }
 
         /// <summary>
-        /// Retorna todos os times cadastrados.
+        /// Lista todos os times cadastrados com seus respectivos atletas.
         /// </summary>
-        /// <returns></returns>
+        /// <returns>Lista de times.</returns>
+        /// <response code="200">Times retornados com sucesso.</response>
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Time>>> GetAll()
         {
@@ -27,10 +31,12 @@ namespace VoleiApp.API.Controllers
         }
 
         /// <summary>
-        /// Retorna um time por ID
+        /// Busca um time pelo identificador.
         /// </summary>
-        /// <param name="id"></param>
-        /// <returns></returns>
+        /// <param name="id">Identificador único do time.</param>
+        /// <returns>Dados do time encontrado.</returns>
+        /// <response code="200">Time encontrado com sucesso.</response>
+        /// <response code="404">Time não encontrado.</response>
         [HttpGet("{id}")]
         public async Task<ActionResult<Time>> GetById(int id)
         {
@@ -40,10 +46,11 @@ namespace VoleiApp.API.Controllers
         }
 
         /// <summary>
-        /// Cria um novo time
+        /// Cria um novo time.
         /// </summary>
-        /// <param name="time"></param>
-        /// <returns></returns>
+        /// <param name="time">Objeto com os dados do time a ser criado.</param>
+        /// <returns>Time criado.</returns>
+        /// <response code="201">Time criado com sucesso.</response>
         [HttpPost]
         public async Task<ActionResult<Time>> Create(Time time)
         {
@@ -53,11 +60,13 @@ namespace VoleiApp.API.Controllers
         }
 
         /// <summary>
-        /// Atualiza um time existente.
+        /// Atualiza os dados de um time existente.
         /// </summary>
-        /// <param name="id"></param>
-        /// <param name="time"></param>
-        /// <returns></returns>
+        /// <param name="id">Identificador do time a ser atualizado.</param>
+        /// <param name="time">Objeto com os dados atualizados do time.</param>
+        /// <returns>Sem conteúdo em caso de sucesso.</returns>
+        /// <response code="204">Time atualizado com sucesso.</response>
+        /// <response code="400">ID da rota diferente do ID informado no corpo da requisição.</response>
         [HttpPut]
         public async Task<IActionResult> Update(int id, Time time)
         {
@@ -69,6 +78,13 @@ namespace VoleiApp.API.Controllers
             return NoContent();
         }
 
+        /// <summary>
+        /// Remove um time pelo identificador.
+        /// </summary>
+        /// <param name="id">Identificador do time a ser removido.</param>
+        /// <returns>Sem conteúdo em caso de sucesso.</returns>
+        /// <response code="204">Time removido com sucesso.</response>
+        /// <response code="404">Time não encontrado.</response>
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id)
         {
