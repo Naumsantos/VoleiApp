@@ -1,3 +1,5 @@
+using Microsoft.EntityFrameworkCore;
+using Microsoft.OpenApi;
 using VoleiApp.Application.Interfaces.Services;
 using VoleiApp.Application.Services;
 using VoleiApp.Domain.Interfaces.Repositories;
@@ -6,8 +8,35 @@ using VoleiApp.Infrastructure.Repositories;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddOpenApi();
 builder.Services.AddControllers();
+builder.Services.AddSwaggerGen(
+    options =>
+    {
+        options.SwaggerDoc("v1", new OpenApiInfo
+        {
+            Version = "v1",
+            Title = "Volei App API",
+            Description = "Uma api para gerenciar sorteio de times, partidas e jogadores.",
+            Contact = new OpenApiContact
+            {
+                Name = "Email",
+                Email = "naum_santos@hotmail.com"
+            }
+        });
+    }
+);
+
+builder.Services.AddOpenApi();
+builder.Services.AddDbContext<VoleiContext>(options =>
+    options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection") ?? "Data Source=voleiapp.db"));
+
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("Dev", policy =>
+        policy.AllowAnyOrigin()
+              .AllowAnyHeader()
+              .AllowAnyMethod());
+});
 
 // Services
 builder.Services.AddScoped<ISorteioService, SorteioService>();
@@ -22,6 +51,12 @@ builder.Services.AddScoped<ITimeRepository, TimeRepository>();
 
 var app = builder.Build();
 
+using (var scope = app.Services.CreateScope())
+{
+    var context = scope.ServiceProvider.GetRequiredService<VoleiContext>();
+    context.Database.Migrate();
+}
+
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
@@ -30,5 +65,8 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 app.MapControllers();
+app.UseSwagger();
+app.UseSwaggerUI();
+app.UseCors("Dev");
 
 app.Run();
