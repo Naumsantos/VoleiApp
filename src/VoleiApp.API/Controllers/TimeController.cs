@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
+using VoleiApp.Application.DTOs.Partida;
+using VoleiApp.Application.Interfaces.Services;
 using VoleiApp.Domain.Entities;
-using VoleiApp.Infrastructure.Persistence;
 
 namespace VoleiApp.API.Controllers
 {
@@ -12,11 +12,11 @@ namespace VoleiApp.API.Controllers
     [Route("api/[controller]")]
     public class TimeController : ControllerBase
     {
-        private readonly VoleiContext _context;
+        private readonly ITimeService _service;
 
-        public TimeController(VoleiContext context)
+        public TimeController(ITimeService service)
         {
-            _context = context;
+            _service = service;
         }
 
         /// <summary>
@@ -25,9 +25,10 @@ namespace VoleiApp.API.Controllers
         /// <returns>Lista de times.</returns>
         /// <response code="200">Times retornados com sucesso.</response>
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Time>>> GetAll()
+        public async Task<ActionResult<IEnumerable<Time>>> GetAll(CancellationToken ct = default)
         {
-            return await _context.Times.Include(t => t.Atletas).ToListAsync();
+            var times = await _service.GetAllAsync(ct);
+            return Ok(times);
         }
 
         /// <summary>
@@ -38,9 +39,9 @@ namespace VoleiApp.API.Controllers
         /// <response code="200">Time encontrado com sucesso.</response>
         /// <response code="404">Time não encontrado.</response>
         [HttpGet("{id}")]
-        public async Task<ActionResult<Time>> GetById(int id)
+        public async Task<ActionResult<Time>> GetById(int id, CancellationToken ct = default)
         {
-            var time = await _context.Times.Include(t => t.Atletas).FirstOrDefaultAsync(t => t.ID == id);
+            var time = await _service.GetByIdAsync(id, ct);
 
             return time == null ? NotFound() : Ok(time);
         }
@@ -52,11 +53,10 @@ namespace VoleiApp.API.Controllers
         /// <returns>Time criado.</returns>
         /// <response code="201">Time criado com sucesso.</response>
         [HttpPost]
-        public async Task<ActionResult<Time>> Create(Time time)
+        public async Task<ActionResult<Time>> Create(CriarTimeDTO time, CancellationToken ct = default)
         {
-            _context.Times.Add(time);
-            await _context.SaveChangesAsync();
-            return CreatedAtAction(nameof(GetById), new {id = time.ID}, time);
+            await _service.CreateAsync(time, ct);
+            return CreatedAtAction(nameof(time.Nome), new { time.Nome }, time);
         }
 
         /// <summary>
@@ -68,12 +68,11 @@ namespace VoleiApp.API.Controllers
         /// <response code="204">Time atualizado com sucesso.</response>
         /// <response code="400">ID da rota diferente do ID informado no corpo da requisição.</response>
         [HttpPut]
-        public async Task<IActionResult> Update(int id, Time time)
+        public async Task<IActionResult> Update(int id, TimeDTO time, CancellationToken ct = default)
         {
-            if (id != time.ID) return BadRequest();
+            if (id == 0) return BadRequest();
 
-            _context.Entry(time).State = EntityState.Modified;
-            await _context.SaveChangesAsync();
+            await _service.UpdateAsync(id, time, ct);
 
             return NoContent();
         }
@@ -86,13 +85,9 @@ namespace VoleiApp.API.Controllers
         /// <response code="204">Time removido com sucesso.</response>
         /// <response code="404">Time não encontrado.</response>
         [HttpDelete("{id}")]
-        public async Task<IActionResult> Delete(int id)
+        public async Task<IActionResult> Delete(int id, CancellationToken ct = default)
         {
-            var time = await _context.Times.FindAsync(id);
-            if (time == null) return NotFound();
-
-            _context.Times.Remove(time);
-            await _context.SaveChangesAsync();
+            await _service.DeleteAsync(id, ct);
 
             return NoContent();
         }
