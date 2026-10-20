@@ -13,10 +13,12 @@ builder.Services.AddControllers();
 builder.Services.AddScoped<ISorteioService, SorteioService>();
 builder.Services.AddScoped<IAtletaService, AtletaService>();
 builder.Services.AddScoped<IPartidaService, PartidaService>();
+builder.Services.AddScoped<ITimeService, TimeService>();
 
 // Repositories
 builder.Services.AddScoped<IAtletaRepository, AtletaRepository>();
 builder.Services.AddScoped<IPartidaRepository, PartidaRepository>();
+builder.Services.AddScoped<ITimeRepository, TimeRepository>();
 
 var app = builder.Build();
 
