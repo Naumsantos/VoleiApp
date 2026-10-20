@@ -1,66 +1,49 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using VoleiApp.Domain.Entities;
-using VoleiApp.Infrastructure.Persistence;
+using VoleiApp.Application.DTOs.Partida;
+using VoleiApp.Application.Interfaces.Services;
 
 namespace VoleiApp.API.Controllers
 {
+    /// <summary>
+    /// Endpoints para consulta de substituições registradas nas partidas.
+    /// </summary>
     [ApiController]
     [Route("api/[controller]")]
     public class SubstituicoesController : ControllerBase
     {
-        readonly VoleiContext _context;
+        private readonly IPartidaService _partidaService;
 
-        public SubstituicoesController( VoleiContext context)
+        public SubstituicoesController(IPartidaService partidaService)
         {
-            _context = context;
+            _partidaService = partidaService;
         }
 
         /// <summary>
-        /// Busca todas as substituições.
+        /// Lista todas as substituições cadastradas.
         /// </summary>
-        /// <returns></returns>
+        /// <param name="ct">Token para cancelamento da operação.</param>
+        /// <returns>Coleção de substituições.</returns>
+        /// <response code="200">Substituições retornadas com sucesso.</response>
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Substituicao>>> GetAll()
+        public async Task<ActionResult<IEnumerable<SubstituicaoResponseDTO>>> GetAll(CancellationToken ct)
         {
-            var subs = await _context.Substituicoes
-                                    .Include(s => s.Entraram)
-                                    .Include(s => s.Sairam)
-                                    .ToListAsync();
-
-            return Ok(subs);
+            var substituicoes = await _partidaService.GetSubstituicoesAsync(ct);
+            return Ok(substituicoes);
         }
 
         /// <summary>
-        /// Retorna uma substituição pelo ID.
+        /// Obtém uma substituição pelo identificador.
         /// </summary>
-        /// <param name="id"></param>
-        /// <returns></returns>
+        /// <param name="id">Identificador da substituição.</param>
+        /// <param name="ct">Token para cancelamento da operação.</param>
+        /// <returns>Dados da substituição encontrada.</returns>
+        /// <response code="200">Substituição encontrada e retornada.</response>
+        /// <response code="404">Substituição não encontrada.</response>
         [HttpGet("{id}")]
-        public async Task<ActionResult<Substituicao>> GetById(int id)
+        public async Task<ActionResult<SubstituicaoResponseDTO>> GetById(int id, CancellationToken ct)
         {
-            var substituicao = await _context.Substituicoes
-                .Include(s => s.Entraram)
-                .Include(s => s.Sairam)
-                .FirstOrDefaultAsync(s => s.Id == id);
-
-            if (substituicao == null) return NotFound();
-
-            return substituicao;
-        }
-
-        /// <summary>
-        /// Registra uma substituição em uma partida.
-        /// </summary>
-        /// <param name="substituicao"></param>
-        /// <returns></returns>
-        [HttpPost]
-        public async Task<ActionResult<Substituicao>> Create(Substituicao substituicao)
-        {
-            _context.Substituicoes.Add(substituicao);
-            await _context.SaveChangesAsync();
-
-            return CreatedAtAction(nameof(GetById), new { id = substituicao.Id }, substituicao);
+            var substituicao = await _partidaService.GetSubstituicaoByIdAsync(id, ct);
+            return substituicao is null ? NotFound() : Ok(substituicao);
         }
     }
 }

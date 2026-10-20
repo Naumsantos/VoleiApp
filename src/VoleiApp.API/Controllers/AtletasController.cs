@@ -4,6 +4,9 @@ using VoleiApp.Application.Interfaces.Services;
 
 namespace VoleiApp.API.Controllers
 {
+    /// <summary>
+    /// Endpoints para gerenciamento de atletas.
+    /// </summary>
     [ApiController]
     [Route("api/[controller]")]
     public class AtletasController : ControllerBase
@@ -18,6 +21,9 @@ namespace VoleiApp.API.Controllers
         /// <summary>
         /// Retorna todos os atletas cadastrados.
         /// </summary>
+        /// <param name="ct">Token para cancelamento da requisição.</param>
+        /// <returns>Lista de atletas.</returns>
+        /// <response code="200">Lista retornada com sucesso.</response>
         [HttpGet]
         public async Task<ActionResult<List<AtletaResponseDTO>>> GetAll(CancellationToken ct)
         {
@@ -26,8 +32,13 @@ namespace VoleiApp.API.Controllers
         }
 
         /// <summary>
-        /// Retorna um atleta por ID.
+        /// Retorna um atleta pelo identificador.
         /// </summary>
+        /// <param name="ID">Identificador único do atleta.</param>
+        /// <param name="ct">Token para cancelamento da requisição.</param>
+        /// <returns>Atleta encontrado.</returns>
+        /// <response code="200">Atleta retornado com sucesso.</response>
+        /// <response code="404">Atleta não encontrado.</response>
         [HttpGet("{id}")]
         public async Task<ActionResult<AtletaResponseDTO>> GetById(int ID, CancellationToken ct)
         {
@@ -37,8 +48,13 @@ namespace VoleiApp.API.Controllers
         }
 
         /// <summary>
-        /// Cadastra um novo atleta
+        /// Cadastra um novo atleta.
         /// </summary>
+        /// <param name="atleta">Dados do atleta a ser criado.</param>
+        /// <param name="ct">Token para cancelamento da requisição.</param>
+        /// <returns>Atleta criado.</returns>
+        /// <response code="201">Atleta criado com sucesso.</response>
+        /// <response code="400">Dados inválidos para criação.</response>
         [HttpPost]
         public async Task<ActionResult<AtletaResponseDTO>> Create([FromBody] CriarAtletaDTO atleta, CancellationToken ct)
         {
@@ -55,8 +71,14 @@ namespace VoleiApp.API.Controllers
         }
 
         /// <summary>
-        /// Atualiza os dados do atleta existente.
+        /// Atualiza os dados de um atleta existente.
         /// </summary>
+        /// <param name="id">Identificador do atleta.</param>
+        /// <param name="atleta">Novos dados do atleta.</param>
+        /// <param name="ct">Token para cancelamento da requisição.</param>
+        /// <response code="204">Atleta atualizado com sucesso.</response>
+        /// <response code="400">Dados inválidos para atualização.</response>
+        /// <response code="404">Atleta não encontrado.</response>
         [HttpPut("{id}")]
         public async Task<IActionResult> Update(int id, [FromBody] AtualizarAtletaDTO atleta, CancellationToken ct)
         {
@@ -76,8 +98,12 @@ namespace VoleiApp.API.Controllers
         }
 
         /// <summary>
-        /// Deleta um atleta por ID
+        /// Remove um atleta pelo identificador.
         /// </summary>
+        /// <param name="id">Identificador do atleta.</param>
+        /// <param name="ct">Token para cancelamento da requisição.</param>
+        /// <response code="204">Atleta removido com sucesso.</response>
+        /// <response code="404">Atleta não encontrado.</response>
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id, CancellationToken ct)
         {
