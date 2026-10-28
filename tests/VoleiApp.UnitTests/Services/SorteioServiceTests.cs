@@ -2,6 +2,7 @@
 using VoleiApp.Application.Services;
 using VoleiApp.Domain.Entities;
 using VoleiApp.Domain.Enums;
+using VoleiApp.Domain.Interfaces.Repositories;
 
 namespace VoleiApp.UnitTests.Services
 {
@@ -24,7 +25,7 @@ namespace VoleiApp.UnitTests.Services
 
         //----- Cenário 1: times ideais -----
         [Fact]
-        public async Task SortearTimes_QuandoEstoquePerfeito_DeveGerarTimesIdeaisSemFallback()
+        public async Task SortearTimes_QuandoEstoquePerfeito_DeveGerarTimesIdeaisSemIncompletos()
         {
             // Arrange
             var config = new SorteioConfigDTO
@@ -42,15 +43,14 @@ namespace VoleiApp.UnitTests.Services
 
             // Assert
             Assert.Equal(3, resultado.Times.Count);
-            Assert.False(resultado.FallbackAplicado);
             Assert.Empty(resultado.Reservas);
             Assert.Equal(0, resultado.TimesIncompletos);
-            Assert.DoesNotContain(resultado.Warnings, w => w.StartsWith("Fallback"));
+            Assert.DoesNotContain(resultado.Warnings, w => w.Contains("incompleto", StringComparison.OrdinalIgnoreCase));
         }
 
         // ----- Cenário 2: falta levantador -----
         [Fact]
-        public async Task SortearTimes_QuandoFaltarLevantador_DeveAplicarFallbackERegistrarWarning()
+        public async Task SortearTimes_QuandoFaltarLevantador_DeveGerarTimeIncompleto()
         {
             // Arrange — 4 atacantes + 2 meios + SEM levantador
             var config = new SorteioConfigDTO
@@ -75,13 +75,14 @@ namespace VoleiApp.UnitTests.Services
 
             var resultado = await _service.SortearTimes(config);
 
-            Assert.True(resultado.FallbackAplicado);
-            Assert.Contains(resultado.Warnings, w => w.Contains("Fallback"));
+            Assert.Equal(1, resultado.TimesIncompletos);
+            Assert.Equal(5, resultado.Reservas.Count);
+            Assert.Contains(resultado.Warnings, w => w.Contains("incompleto", StringComparison.OrdinalIgnoreCase));
         }
 
         // ----- Cenário 3: falta meio/central -----
         [Fact]
-        public async Task SortearTimes_QuandoFaltaMeio_DeveAplicarFallbackERegistrarWarning()
+        public async Task SortearTimes_QuandoFaltaMeio_DeveGerarTimeIncompleto()
         {
             // Arrange — 4 atacantes + 2 meios + SEM levantador
             var config = new SorteioConfigDTO
@@ -106,13 +107,14 @@ namespace VoleiApp.UnitTests.Services
 
             var result = await _service.SortearTimes(config);
 
-            Assert.True(result.FallbackAplicado);
-            Assert.Contains(result.Warnings, w => w.Contains("Fallback"));
+            Assert.Equal(1, result.TimesIncompletos);
+            Assert.Equal(5, result.Reservas.Count);
+            Assert.Contains(result.Warnings, w => w.Contains("incompleto", StringComparison.OrdinalIgnoreCase));
         }
 
         // ----- Cenário 4: atletas sobrando vão para reserva -----
         [Fact]
-        public async Task SortearTimes_QuandoSobramAtletas_DevePularParaReservas()
+        public async Task SortearTimes_QuandoSobramAtletas_DeveGerarTimeIncompletoComSobras()
         {
             var atletas = AtletasIdeais(2);
             atletas.Add(Atleta(998, "Reserva 1", EPosicao.Ponteiro));
@@ -130,14 +132,15 @@ namespace VoleiApp.UnitTests.Services
 
             var result = await _service.SortearTimes(config);
 
-            Assert.Equal(2, result.Times.Count);
-            Assert.Equal(2, result.Reservas.Count);
-            Assert.Contains(result.Warnings, w => w.Contains("reserva"));
+            Assert.Equal(3, result.Times.Count);
+            Assert.Empty(result.Reservas);
+            Assert.Equal(1, result.TimesIncompletos);
+            Assert.Contains(result.Warnings, w => w.Contains("incompleto", StringComparison.OrdinalIgnoreCase));
         }
 
         // ----- Cenário 5: lista vazia -----
         [Fact]
-        public async Task SortearTimes_QuandoAListaEstiverVazia_DeveRetornatWarningSemException()
+        public async Task SortearTimes_QuandoAListaEstiverVazia_DeveRetornarWarningSemException()
         {
             var config = new SorteioConfigDTO
             {
@@ -148,7 +151,7 @@ namespace VoleiApp.UnitTests.Services
             var result = await _service.SortearTimes(config);
 
             Assert.Empty(result.Times);
-            Assert.Contains(result.Warnings, w => w.Contains("vazia"));
+            Assert.Contains(result.Warnings, w => w.Contains("não há atletas", StringComparison.OrdinalIgnoreCase));
         }
 
         // ----- Cenário 6: nenhum atleta duplicado entre times -----
@@ -171,6 +174,44 @@ namespace VoleiApp.UnitTests.Services
             var idsUnicos = todosIds.Distinct().ToList();
 
             Assert.Equal(todosIds.Count, idsUnicos.Count);
+        }
+
+        [Fact]
+        public async Task SortearTimes_QuandoNaoInformarAtletas_DeveBuscarAtletasNoRepositorio()
+        {
+            var repository = new FakeAtletaRepository(AtletasIdeais(2));
+            var service = new SorteioService(repository);
+
+            var result = await service.SortearTimes(new SorteioConfigDTO
+            {
+                TamanhoDoTime = 4,
+                AtacantesPorTime = 2,
+                LevantadoresPorTime = 1,
+                MeiosPorTime = 1
+            });
+
+            Assert.Equal(2, result.Times.Count);
+            Assert.Equal(0, result.TimesIncompletos);
+            Assert.Empty(result.Reservas);
+        }
+
+        [Fact]
+        public async Task SortearTimes_DevePersistirTimesCriadosNoRepositorio()
+        {
+            var atletaRepository = new FakeAtletaRepository(AtletasIdeais(2));
+            var timeRepository = new FakeTimeRepository();
+            var service = new SorteioService(atletaRepository, timeRepository);
+
+            await service.SortearTimes(new SorteioConfigDTO
+            {
+                TamanhoDoTime = 4,
+                AtacantesPorTime = 2,
+                LevantadoresPorTime = 1,
+                MeiosPorTime = 1
+            });
+
+            Assert.Equal(2, timeRepository.TimesPersistidos.Count);
+            Assert.All(timeRepository.TimesPersistidos, t => Assert.Equal(4, t.Atletas.Count));
         }
 
         // ----- Cenário 7: substituição rotaciona reserva corretamente -----
@@ -228,6 +269,39 @@ namespace VoleiApp.UnitTests.Services
             // Assert
             Assert.Empty(substituicao.Entraram);
             Assert.Equal(4, timePerdedor.Atletas.Count); // time intacto
+        }
+
+        private sealed class FakeAtletaRepository(List<Atleta> atletas) : IAtletaRepository
+        {
+            private readonly List<Atleta> _atletas = atletas;
+
+            public Task<List<Atleta>> GetAllAsync(CancellationToken ct = default) => Task.FromResult(_atletas.ToList());
+
+            public Task<Atleta?> GetByIdAsync(int id, CancellationToken ct = default) =>
+                Task.FromResult(_atletas.FirstOrDefault(a => a.ID == id));
+
+            public Task AddAsync(Atleta atleta, CancellationToken ct = default) => Task.CompletedTask;
+            public Task UpdateAsync(Atleta atleta, CancellationToken ct = default) => Task.CompletedTask;
+            public Task DeleteAsync(int id, CancellationToken ct = default) => Task.CompletedTask;
+        }
+
+        private sealed class FakeTimeRepository : ITimeRepository
+        {
+            public List<Time> TimesPersistidos { get; } = new();
+
+            public Task<IEnumerable<Time>> GetAllAsync(CancellationToken ct) => Task.FromResult(TimesPersistidos.AsEnumerable());
+
+            public Task<Time?> GetByIdAsync(int id, CancellationToken ct) =>
+                Task.FromResult(TimesPersistidos.FirstOrDefault(t => t.ID == id));
+
+            public Task AddAsync(Time time, CancellationToken ct)
+            {
+                TimesPersistidos.Add(time);
+                return Task.CompletedTask;
+            }
+
+            public Task UpdateAsync(Time time, CancellationToken ct) => Task.CompletedTask;
+            public Task DeleteAsync(Time time, CancellationToken ct) => Task.CompletedTask;
         }
     }
 }
