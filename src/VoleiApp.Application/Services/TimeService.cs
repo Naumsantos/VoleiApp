@@ -16,11 +16,22 @@ namespace VoleiApp.Application.Services
 
         public async Task<TimeResponseDTO> CreateAsync(CriarTimeDTO dto, CancellationToken ct = default)
         {
-            var time = new Time { Nome = dto.Nome, Atletas = dto.Atletas };
+            var atletas = dto.Atletas
+                .Select(a => new TimeAtleta
+                {
+                    AtletaId = a.AtletaId
+                })
+                .ToList();
+
+            var time = new Time
+            {
+                Nome = dto.Nome,
+                Atletas = atletas
+            };
 
             await _repository.AddAsync(time, ct);
 
-            return new TimeResponseDTO { Nome = time.Nome };
+            return new TimeResponseDTO { ID = time.ID, Nome = time.Nome };
         }
 
         public async Task DeleteAsync(int id, CancellationToken ct = default)
@@ -30,11 +41,30 @@ namespace VoleiApp.Application.Services
             await _repository.DeleteAsync(time, ct);
         }
 
-        public async Task<IEnumerable<TimeDTO>> GetAllAsync(CancellationToken ct = default)
+        public async Task<IEnumerable<TimeCompletoResponseDTO>> GetAllAsync(CancellationToken ct = default)
         {
             var times = await _repository.GetAllAsync(ct);
 
-            return (IEnumerable<TimeDTO>)times.ToList();
+            var response = times.Select(t => new TimeCompletoResponseDTO
+            {
+                ID = t.ID,
+                Nome = t.Nome,
+                Atletas = t.Atletas.Select(ta => new TimeAtletaResponseDTO
+                {
+                    ID = ta.ID,
+                    TimeId = ta.TimeId,
+                    Time = t.Nome,
+                    AtletaId = ta.AtletaId,
+                    Atleta = new()
+                    {
+                        ID = ta.Atleta.ID,
+                        Nome = ta.Atleta.Nome,
+                        Posicao = ta.Atleta.Posicao
+                    }
+                }).ToList()
+            });
+
+            return response;
         }
 
         public async Task<Time> GetByIdAsync(int id, CancellationToken ct = default)
@@ -42,9 +72,12 @@ namespace VoleiApp.Application.Services
             return await _repository.GetByIdAsync(id, ct) ?? throw new KeyNotFoundException($"Time {id} não encontrado.");
         }
 
-        public async Task UpdateAsync(int id, Time time, CancellationToken ct = default)
+        public async Task UpdateAsync(int id, TimeDTO dto, CancellationToken ct = default)
         {
-            await _repository.GetByIdAsync(id, ct);
+            var time = await _repository.GetByIdAsync(id, ct)
+                ?? throw new KeyNotFoundException($"Time {id} não encontrado.");
+
+            time.Nome = dto.Nome;
 
             await _repository.UpdateAsync(time, ct);
         }
