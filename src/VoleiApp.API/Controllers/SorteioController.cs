@@ -33,9 +33,6 @@ public class SorteioController : ControllerBase
         if (config.TamanhoDoTime != 4)
             return BadRequest("No MVP, o tamanho do time deve ser 4.");
 
-        if (config.Atletas is null || !config.Atletas.Any())
-            return BadRequest("Lista de atletas não pode estar vazia.");
-
         var resultado = await _sorteio.SortearTimes(config);
         return Ok(resultado);
     }

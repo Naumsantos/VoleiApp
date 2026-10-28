@@ -25,7 +25,7 @@ namespace VoleiApp.API.Controllers
         /// <returns>Lista de times.</returns>
         /// <response code="200">Times retornados com sucesso.</response>
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Time>>> GetAll(CancellationToken ct = default)
+        public async Task<ActionResult<IEnumerable<TimeCompletoResponseDTO>>> GetAll(CancellationToken ct = default)
         {
             var times = await _service.GetAllAsync(ct);
             return Ok(times);
@@ -55,8 +55,8 @@ namespace VoleiApp.API.Controllers
         [HttpPost]
         public async Task<ActionResult<Time>> Create(CriarTimeDTO time, CancellationToken ct = default)
         {
-            await _service.CreateAsync(time, ct);
-            return CreatedAtAction(nameof(time.Nome), new { time.Nome }, time);
+            var timeCriado = await _service.CreateAsync(time, ct);
+            return CreatedAtAction(nameof(GetById), new { timeCriado.ID }, time);
         }
 
         /// <summary>
