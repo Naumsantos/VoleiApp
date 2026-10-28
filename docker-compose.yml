@@ -1,0 +1,31 @@
+services:
+  api:
+    build:
+      context: .
+      dockerfile: src/VoleiApp.API/Dockerfile
+    container_name: voleiapp-api
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_URLS: http://+:8080
+      ConnectionStrings__DefaultConnection: Data Source=/app/data/voleiapp.db
+      Ai__BaseUrl: http://ollama:11434/v1
+      Ai__Model: llama3.1
+      Ai__ApiKey: local-ollama
+    ports:
+      - "8080:8080"
+    volumes:
+      - voleiapp_data:/app/data
+    depends_on:
+      - ollama
+
+  ollama:
+    image: ollama/ollama:latest
+    container_name: voleiapp-ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+
+volumes:
+  voleiapp_data:
+  ollama_data:
