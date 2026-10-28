@@ -1,8 +1,10 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using Microsoft.OpenApi;
 using VoleiApp.Application.Interfaces.Services;
 using VoleiApp.Application.Services;
 using VoleiApp.Domain.Interfaces.Repositories;
+using VoleiApp.Infrastructure.AI;
 using VoleiApp.Infrastructure.Persistence;
 using VoleiApp.Infrastructure.Repositories;
 
@@ -23,6 +25,10 @@ builder.Services.AddSwaggerGen(
                 Email = "naum_santos@hotmail.com"
             }
         });
+
+        var xmlFile = $"{System.Reflection.Assembly.GetExecutingAssembly().GetName().Name}.xml";
+        var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
+        options.IncludeXmlComments(xmlPath);
     }
 );
 
@@ -37,6 +43,18 @@ builder.Services.AddCors(options =>
               .AllowAnyHeader()
               .AllowAnyMethod());
 });
+
+//AI
+builder.Services.Configure<AiOptions>(builder.Configuration.GetSection(AiOptions.SectionName));
+builder.Services.AddHttpClient<OllamaAiInsightsService>((sp, client) =>
+{
+    var options = sp.GetRequiredService<IOptions<AiOptions>>().Value;
+
+    client.BaseAddress = new Uri(options.BaseUrl.TrimEnd('/') + "/");
+    client.Timeout = TimeSpan.FromSeconds(options.TimeoutSeconds);
+});
+builder.Services.AddScoped<FallbackInsightsService>();
+builder.Services.AddScoped<IAiInsightsService, ResilienteAiInsightsService>();
 
 // Services
 builder.Services.AddScoped<ISorteioService, SorteioService>();

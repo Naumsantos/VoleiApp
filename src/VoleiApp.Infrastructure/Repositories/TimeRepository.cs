@@ -26,12 +26,18 @@ namespace VoleiApp.Infrastructure.Repositories
             await _context.SaveChangesAsync(ct);
         }
 
-        public async Task<List<Time>> GetAllAsync(CancellationToken ct = default)
+        public async Task<IEnumerable<Time>> GetAllAsync(CancellationToken ct = default)
         {
-            return await _context.Times.Include(t => t.Atletas).ToListAsync(ct);
+            return await _context.Times
+                .Include(t => t.Atletas)
+                .ThenInclude(ta => ta.Atleta)
+                .ToListAsync(ct);
         }
 
-        public async Task<Time?> GetByIdAsync(int id, CancellationToken ct = default) => await _context.Times.Include(t => t.Atletas).FirstOrDefaultAsync(t => t.ID == id, ct);
+        public async Task<Time?> GetByIdAsync(int id, CancellationToken ct = default) => await _context.Times
+            .Include(t => t.Atletas)
+            .ThenInclude(ta => ta.Atleta)
+            .FirstOrDefaultAsync(t => t.ID == id, ct);
 
         public async Task UpdateAsync(Time time, CancellationToken ct = default)
         {
